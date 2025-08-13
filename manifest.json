@@ -1,49 +1,25 @@
 {
   "manifest_version": 3,
-  "name": "Local TTS",
-  "version": "1.0",
-  "description": "A Chrome extension for text-to-speech using local models",
+  "name": "Chatterbox TTS mini",
+  "version": "0.1.0",
+  "description": "Floating pill TTS controller (open-source).",
   "permissions": [
     "storage",
-    "tts",
-    "contextMenus",
     "activeTab",
-    "scripting"
+    "scripting",
+    "contextMenus",
+    "offscreen"
   ],
-  "host_permissions": [
-    "http://*/*",
-    "https://*/*"
-  ],
-  "action": {
-    "default_popup": "popup.html",
-    "default_icon": {
-      "16": "icons/icon16.png",
-      "48": "icons/icon48.png",
-      "128": "icons/icon128.png"
-    }
-  },
-  "icons": {
-    "16": "icons/icon16.png",
-    "48": "icons/icon48.png",
-    "128": "icons/icon128.png"
-  },
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
+  "host_permissions": ["<all_urls>"],
+  "background": { "service_worker": "background.js" },
   "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_end",
-      "all_frames": true,
-      "match_about_blank": true
-    }
+    { "matches": ["<all_urls>"], "js": ["fab.content.js"], "run_at": "document_idle" }
   ],
-  "web_accessible_resources": [
-    {
-      "resources": ["content.js"],
-      "matches": ["<all_urls>"]
+  "commands": {
+    "toggle-play-pause": {
+      "suggested_key": { "default": "Ctrl+Shift+P", "mac": "Command+Shift+P" },
+      "description": "Toggle play/pause"
     }
-  ]
+  },
+  "action": { "default_title": "Chatterbox TTS mini", "default_popup": "popup.html" }
 }

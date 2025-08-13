@@ -1,142 +1,42 @@
-const TTS_API_URL = '';
-const VOICES_API_URL = '';
+// ttsService.js — Optional engine wrapper if you want to keep engines separated.
+// In MV3 SW, you *can't* use Web Speech directly; use the offscreen page for both engines.
 
-class TTSService {
-  constructor() {
-    this.voices = [];
-    this.apiHost = '';
-    this.apiToken = null;
-    this.loadVoices().catch(console.error);
-  }
-
-  setApiHost(host) {
-    // Ensure the host doesn't end with a slash
-    this.apiHost = host ? host.replace(/\/+$/, '') : '';
-    this.voices = []; // Reset voices when host changes
-  }
-
-  setApiToken(token) {
-    this.apiToken = token || null;
-  }
-
-  getApiHost() {
-    return this.apiHost;
-  }
-
-  async loadVoices() {
-    console.log('TTS: Loading voices...');
-    
-    if (!this.apiHost) {
-      console.error('TTS: No API host configured');
-      return [];
-    }
-    
-    const voicesUrl = `${this.apiHost}/v1/voices`;
-    
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      // Add auth token if provided
-      if (this.apiToken) {
-        headers['Authorization'] = `Bearer ${this.apiToken}`;
+async function ensureOffscreen() {
+    if (chrome.offscreen && chrome.offscreen.hasDocument) {
+      const has = await chrome.offscreen.hasDocument();
+      if (!has) {
+        await chrome.offscreen.createDocument({
+          url: "offscreen.html",
+          reasons: ["AUDIO_PLAYBACK"],
+          justification: "Reliable audio playback and Web Speech synthesis"
+        });
       }
-      
-      const response = await fetch(voicesUrl, {
-        method: 'GET',
-        headers: headers,
+    }
+  }
+  
+  async function offscreenMsg(message) {
+    await ensureOffscreen();
+    return chrome.runtime.sendMessage(message);
+  }
+  
+  export const engines = {
+    async webspeech({ text, rate = 1.0, pitch = 1.0, voiceName = "" }) {
+      return offscreenMsg({ type: "offscreen:webspeechSpeak", payload: { text, rate, pitch, voiceName } });
+    },
+    async chatterbox({ text, apiBase, jwt, rate = 1.0, pitch = 1.0, voiceName = "" }) {
+      if (!apiBase) throw new Error("Missing apiBase for chatterbox engine");
+      const res = await fetch(`${apiBase.replace(/\/+$/,'')}/synthesize`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(jwt ? { "Authorization": `Bearer ${jwt}` } : {})
+        },
+        body: JSON.stringify({ text, rate, pitch, voice: voiceName || undefined })
       });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('TTS: Failed to load voices:', response.status, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      this.voices = await response.json();
-      console.log('TTS: Loaded voices:', this.voices);
-      return this.voices;
-    } catch (error) {
-      console.error('TTS: Error loading voices:', error);
-      // Return default voice if API fails
-      this.voices = [{ voice_id: 'default', name: 'Default Voice' }];
-      return this.voices;
-    }
-  }
-
-  async generateSpeech(text, voiceId = 'default', options = {}) {
-    console.log('TTS: Generating speech for text:', text.substring(0, 50) + (text.length > 50 ? '...' : ''));
-    
-    if (!this.apiHost) {
-      throw new Error('No API host configured. Please set the API host in settings.');
-    }
-    
-    const ttsUrl = `${this.apiHost}/v1/audio/speech`;
-    
-    try {
-      const headers = {
-        'Content-Type': 'application/json',
-      };
-      
-      // Add auth token if provided
-      if (this.apiToken) {
-        headers['Authorization'] = `Bearer ${this.apiToken}`;
-      }
-      
-      // Prepare request body with options
-      const requestBody = {
-        input: text,
-        voice: voiceId,
-        // Map the rate and pitch to the expected API parameters
-        // Different TTS APIs might use different parameter names
-        speed: options.speed || options.rate || 1.0, // Some APIs use 'speed' instead of 'rate'
-        pitch: options.pitch || 1.0,
-        // Add any additional options that might be supported by the API
-        ...options
-      };
-      
-      // Remove undefined values
-      Object.keys(requestBody).forEach(key => {
-        if (requestBody[key] === undefined) {
-          delete requestBody[key];
-        }
-      });
-      
-      console.log('TTS: Sending request to:', ttsUrl);
-      console.log('TTS: Request body:', JSON.stringify(requestBody, null, 2));
-      
-      const response = await fetch(ttsUrl, {
-        method: 'POST',
-        headers: headers,
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('TTS: Error generating speech:', response.status, errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      // Get the audio data as ArrayBuffer
-      const audioData = await response.arrayBuffer();
-      if (!audioData || audioData.byteLength === 0) {
-        throw new Error('Empty audio response from server');
-      }
-      
-      console.log('TTS: Audio data received, size:', audioData.byteLength, 'bytes');
-      return audioData;
-    } catch (error) {
-      console.error('TTS: Error in generateSpeech:', error);
-      throw error;
-    }
-  }
-
-  getVoices() {
-    return this.voices;
-  }
-}
-
-// Export a singleton instance
-const ttsService = new TTSService();
-export default ttsService;
+      if (!res.ok) throw new Error(`TTS API ${res.status}`);
+      const arr = await res.arrayBuffer();
+      return offscreenMsg({ type: "offscreen:playAudio", arrayBuffer: arr });
+    },
+    stop() { return offscreenMsg({ type: "offscreen:stop" }); }
+  };
+  

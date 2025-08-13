@@ -1,136 +1,76 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <title>Chatterbox TTS</title>
-  <style>
-    body {
-      width: 350px;
-      padding: 15px;
-      font-family: Arial, sans-serif;
-      font-size: 14px;
-    }
-    .form-group {
-      margin-bottom: 15px;
-    }
-    label {
-      display: block;
-      margin-bottom: 5px;
-      font-weight: bold;
-    }
-    input[type="text"],
-    input[type="password"],
-    select {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-sizing: border-box;
-    }
-    .controls {
-      display: flex;
-      gap: 10px;
-      margin: 15px 0;
-    }
-    button {
-      flex: 1;
-      padding: 8px;
-      background-color: #4285f4;
-      color: white;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-    button:hover {
-      background-color: #3367d6;
-    }
-    button:disabled {
-      background-color: #cccccc;
-      cursor: not-allowed;
-    }
-    .status {
-      margin: 10px 0;
-      padding: 8px;
-      border-radius: 4px;
-      display: none;
-    }
-    .success {
-      background-color: #e6f4ea;
-      color: #0d652d;
-      border: 1px solid #81c995;
-    }
-    .error {
-      background-color: #fce8e6;
-      color: #c5221f;
-      border: 1px solid #f28b82;
-    }
-    .info {
-      background-color: #e8f0fe;
-      color: #1967d2;
-      border: 1px solid #8ab4f8;
-    }
-    .settings-section {
-      margin-top: 15px;
-      padding-top: 15px;
-      border-top: 1px solid #eee;
-    }
-    .settings-toggle {
-      color: #1967d2;
-      text-decoration: none;
-      font-size: 12px;
-      cursor: pointer;
-    }
-    .settings-content {
-      display: none;
-      margin-top: 10px;
-    }
-    .settings-content.visible {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <h2>Chatterbox TTS</h2>
-  
-  <div class="form-group">
-    <label for="apiHost">API Host:</label>
-    <input type="text" id="apiHost" placeholder="http://your-api-host:port">
+<!doctype html>
+<meta charset="utf-8" />
+<title>Chatterbox TTS — Settings</title>
+<style>
+  :root { color-scheme: dark light; }
+  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 16px; min-width: 320px; }
+  h1 { font-size: 16px; margin: 0 0 12px; }
+  .row { display: grid; grid-template-columns: 120px 1fr; gap: 8px; align-items: center; margin-bottom: 10px; }
+  input[type="text"], input[type="password"], select {
+    width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; background: transparent;
+  }
+  input[type="range"] { width: 100%; }
+  .hint { font-size: 12px; opacity: .7; margin-top: -6px; margin-bottom: 8px; grid-column: 2 / 3; }
+  .actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; }
+  button { padding: 8px 12px; border-radius: 8px; border: 1px solid #bbb; background: transparent; cursor: pointer; }
+  button.primary { background: #4b74ff; color: white; border: none; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+</style>
+
+<h1>Chatterbox TTS — Settings</h1>
+
+<div class="row">
+  <label for="engine">Engine</label>
+  <select id="engine">
+    <option value="webspeech">Web Speech (browser)</option>
+    <option value="chatterbox">Chatterbox API</option>
+  </select>
+</div>
+
+<div class="row">
+  <label for="voiceName">Voice</label>
+  <div class="split">
+    <select id="voiceList"></select>
+    <input id="voiceName" type="text" placeholder="or type voice name…" />
   </div>
-  
-  <div class="form-group">
-    <label for="apiToken">API Token (optional):</label>
-    <input type="password" id="apiToken" placeholder="Your API token">
+</div>
+<div class="hint">If the dropdown is empty, your browser may not expose voices until a page interacts with speech. You can still type a name.</div>
+
+<div class="row">
+  <label for="rate">Rate</label>
+  <input id="rate" type="range" min="0.5" max="2.0" step="0.05" />
+</div>
+
+<div class="row">
+  <label for="pitch">Pitch</label>
+  <input id="pitch" type="range" min="0.5" max="2.0" step="0.05" />
+</div>
+
+<div class="row">
+  <label for="format">Output format</label>
+  <select id="format">
+    <option value="mp3">MP3 (smaller)</option>
+    <option value="wav">WAV (most compatible)</option>
+    <option value="m4a">M4A (AAC, best for streaming)</option>
+  </select>
+</div>
+
+<fieldset style="border:1px solid #ccc; border-radius:10px; padding:10px; margin-top:12px;">
+  <legend>Chatterbox API</legend>
+  <div class="row">
+    <label for="apiBase">API Base</label>
+    <input id="apiBase" type="text" placeholder="https://your-tts.example.com" />
   </div>
-  
-  <div class="form-group">
-    <label for="voiceSelect">Voice:</label>
-    <select id="voiceSelect">
-      <option value="">Loading voices...</option>
-    </select>
+  <div class="row">
+    <label for="jwt">JWT</label>
+    <input id="jwt" type="password" placeholder="Bearer token" />
   </div>
-  
-  <div class="settings-section">
-    <a href="#" class="settings-toggle" id="settingsToggle">Advanced Settings</a>
-    <div class="settings-content" id="settingsContent">
-      <div class="form-group">
-        <label for="rate">Speed: <span id="rateValue">1.0</span></label>
-        <input type="range" id="rate" min="0.5" max="2.0" step="0.1" value="1.0">
-      </div>
-      
-      <div class="form-group">
-        <label for="pitch">Pitch: <span id="pitchValue">1.0</span></label>
-        <input type="range" id="pitch" min="0.5" max="2.0" step="0.1" value="1.0">
-      </div>
-    </div>
-  </div>
-  
-  <div class="controls">
-    <button id="saveSettings">Save Settings</button>
-  </div>
-  
-  <div class="status" id="status"></div>
-  
-  <script type="module" src="popup.js"></script>
-</body>
-</html>
+  <div class="hint">Only required when using the “Chatterbox API” engine.</div>
+</fieldset>
+
+<div class="actions">
+  <button id="test">Test voice</button>
+  <button id="save" class="primary">Save</button>
+</div>
+
+<script src="popup.js"></script>
