@@ -31,7 +31,7 @@
     const queuePg = document.createElement('button'); queuePg.className='btn'; queuePg.title='Queue page'; queuePg.textContent='★';
     const ga = document.createElement('button'); ga.className='btn'; ga.title='Global Auto'; ga.textContent='GA';
   
-    pill.append(badge,timer,play,readSel,queuePg,ga); root.appendChild(pill);
+    pill.append(timer,play,readSel,queuePg,ga); root.appendChild(pill);
   
     // Helper: ensure extension context
     function extAlive(){ return !!(chrome.runtime && chrome.runtime.id); }
