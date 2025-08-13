@@ -1,0 +1,20 @@
+{
+  "name": "local-tts-extension",
+  "version": "1.0.0",
+  "description": "A Chrome extension for text-to-speech using local models",
+  "scripts": {
+    "generate-icons": "node generate-icons.js",
+    "postinstall": "npm run generate-icons"
+  },
+  "keywords": [
+    "tts",
+    "text-to-speech",
+    "chrome-extension"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "canvas": "^2.11.2",
+    "sharp": "^0.32.0"
+  }
+}
